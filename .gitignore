@@ -1,0 +1,22 @@
+insure
+../file_upload/file_uploads.py
+passports
+qrcode
+ID cards
+bhcpf_enrid.py
+bhcpf.xlsx
+bhcpf_enrids.xlsx
+__pycache__/
+qr
+venv
+.env
+spon
+.xlsx
+trial
+*.xlsx
+qr/*
+.jpg
+trial/*
+.xlsx
+mongo_url.py
+procfile
