@@ -1,5 +1,7 @@
-from flask import Flask, request, jsonify
+import xlsxwriter
+from flask import Flask, request, jsonify, send_file
 from pymongo import MongoClient
+from datetime import datetime, timedelta
 import os
 
 app = Flask(__name__)
@@ -101,4 +103,59 @@ def create_expense():
         return jsonify({"error": str(e), "status":False}), 400
     except Exception as e:
         return jsonify({"error": "An error occurred while processing the request.", "status":False}), 500
+
+
+
+@app.route("/reports", methods=["GET"])
+def get_reports():
+    try:
+        start_date_str = request.args.get("start_date").strip()
+        end_date_str = request.args.get("end_date").strip()
+        start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
+        end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
+
+        query = {"date": {"$gte": start_date_str, "$lte": end_date_str}}
+        results = collection.find(query)
+
+        reports = []
+        for result in results:
+            report = {
+                "category": result["category"],
+                "type": result["type"],
+                "date": result["date"],
+                "amount": result["amount"]
+            }
+            reports.append(report)
+
+        # Add one day if range is only one day
+        if start_date == end_date:
+            end_date = end_date + timedelta(days=1)
+
+        # Create a new Excel workbook and add a worksheet
+        filename = "reports.xlsx"
+        workbook = xlsxwriter.Workbook(filename)
+        worksheet = workbook.add_worksheet()
+
+        # Write column headers
+        headers = list(reports[0].keys())
+        for i, header in enumerate(headers):
+            worksheet.write(0, i, header)
+
+        # Write data rows
+        for i, report in enumerate(reports):
+            for j, value in enumerate(report.values()):
+                worksheet.write(i+1, j, value)
+
+        # Close the workbook
+        workbook.close()
+
+        return send_file(filename, as_attachment=True)
     
+    except ValueError:
+        return({"error":"Invalid date format. Please use format: YYYY-MM-DD", "status":False}),400
+    except KeyError:
+        return({"error":"Invalid query. Please make sure that all fields are present in the collection.", "status":False}),500
+    except IndexError:
+        return({"error":"No data found for the given date range.", "status":False}),500
+    except Exception as e:
+        return({"error":str(e)}), 500

@@ -31,3 +31,5 @@ pandas
 python-dateutil
 marshmallow
 python-dateutil
+openpyxl
+xlsxwriter==1.4.5
